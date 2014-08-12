@@ -1,0 +1,69 @@
+/* player-board */
+td.danger-spot {
+  width: 35px;
+  padding: 0px;
+  cursor: pointer;
+  color: black;
+}
+tr.danger-row {
+  height: 35px;
+}
+table.player-board.text-center {
+  margin: auto;
+}
+td.empty-spot {
+  background-color: #1C6BA0;
+  border-radius: 60px;
+}
+td.chosen-spot {
+  background-color: gray;
+}
+
+/* player-shots */
+td.shot-spot {
+  width: 35px;
+  padding: 0px;
+  cursor: pointer;
+  color: black;
+}
+tr.shot-row {
+  height: 35px;
+}
+table.player-shots.text-center {
+  margin: auto;
+}
+td.empty-shot {
+  background-color: #7EC0EE;
+  border-radius: 60px;
+}
+td.hit-shot {
+  background-color: red;
+}
+td.miss-shot {
+  background-color: white;
+}
+
+
+
+/* chatter */
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+  outline: none !important;
+}
+
+#allPosts {
+resize: none;
+font-size: 12px;
+border-radius: 5px;
+border: #ccc solid 1px;
+line-height: 14px;
+height:100px;
+overflow: scroll;
+}
+
+p {
+  margin:0;
+  padding:0;
+}
