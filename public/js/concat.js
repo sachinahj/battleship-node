@@ -1,5 +1,6 @@
-// connect to our socket server
-var socket = io.connect('http://10.10.10.10:3000/');
+// connect to our socket server or heroku
+// var socket = io.connect('http://10.10.10.10:3000/');
+var socket = io.connect(window.location.hostname);
 
 var app = app || {};
 
