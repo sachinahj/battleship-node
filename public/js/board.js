@@ -5,7 +5,7 @@
 $(function() {
 
   // var name = prompt("What is your name?", "name...");
-  var name = Date.now().toString();
+  var person_name = Date.now().toString();
   var current_room_name;
 
     var BattlePiece = function (name, size, start_point, end_point ) {
@@ -133,7 +133,7 @@ $(function() {
         if (input.length === 4) {
 
           room_name_to_host = input;
-          socket.emit("host", {name: name, room_name: room_name_to_host});
+          socket.emit("host", {name: person_name, room_name: room_name_to_host});
           
           socket.once("host_success", function () {
             current_room_name = room_name_to_host;
@@ -164,7 +164,7 @@ $(function() {
       room_name_to_join = input;
     }
     
-    socket.emit("join", {name: name, room_name: room_name_to_join});
+    socket.emit("join", {name: person_name, room_name: room_name_to_join});
     
     socket.once('join_error', function () {
       alert('No room exist with this name!');
@@ -189,7 +189,7 @@ $(function() {
 
   $('#ready').on('click', function () {
     $('#status').html('<h4>Waiting</h4>');
-    socket.emit('ready', {name: name, room_name: current_room_name, pieces: pieces, status: 'ready', sID: null})
+    socket.emit('ready', {name: personName, room_name: current_room_name, pieces: pieces, status: 'ready', sID: null})
     $(this).hide();
   });
 
