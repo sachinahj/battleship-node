@@ -125,8 +125,8 @@ $(function() {
 // ---------------------------------------------------------
   // on WELCOME
   socket.on('welcome', function () {
-    $('#join').off('click').show();
-    $('#host').off('click').show();
+    $('#join').show();
+    $('#host').show();
   });
 
 
