@@ -52,6 +52,10 @@ app.get("/", function(req, res){
 var all_rooms = [];
 
 io.sockets.on('connection', function (socket) {
+	socket.emit('blast', {msg:"<span style=\"color:red !important\">welcome!</span>"});
+
+
+
 
 	// HOST event
 	// when socket emits host, a new room is created from input host room name and a message is sent to the host

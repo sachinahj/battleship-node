@@ -56,23 +56,5 @@ $(function(){
 	        $sendBlastButton.trigger('click');//lazy, but works
 	    }
 	})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	
 });
