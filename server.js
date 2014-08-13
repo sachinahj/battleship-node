@@ -49,6 +49,7 @@ var all_rooms = [];
 io.sockets.on('connection', function (socket) {
 
 
+	// when socket emits host, a new room is created from input host room name and a message is sent to the host
 	socket.on('host', function (data) {
 		socket.join(data.room_name);
 		var player = {
@@ -63,6 +64,7 @@ io.sockets.on('connection', function (socket) {
 	});
 
 
+	// when socket emits join, we check for room and if it exist, player 2 joins room
 	socket.on('join', function (data) {
 		var player = {
 			name: data.name,
@@ -84,7 +86,7 @@ io.sockets.on('connection', function (socket) {
 
 			var count = io.sockets.clients(data.room_name).length;
 
-			if (count == 2) {
+			if (count === 2) {
 				io.sockets.to(data.room_name).emit('set_pieces')
 				var msg = 'Select your pieces and then press ready!';
 				io.sockets.to(data.room_name).emit('blast', {msg: 'Select your pieces and then press ready!'})
@@ -98,10 +100,12 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('ready', function (data) {
-		data.id = socket.id;
+		data["id"] = socket.id;
 		var room = GetGameByRoomName(data.room_name);
 		var player_number = room.whichPlayersName(data.name);
-		if (player_number == 1){
+		console.log("room", room);
+		console.log("player number", player_number);
+		if (player_number === 1){
 			room.addPlayerOne(data);
 			socket.emit('blast', {msg: "you are ready!"});
 		} else {
@@ -126,11 +130,31 @@ io.sockets.on('connection', function (socket) {
 		fn();//call the client back to clear out the field
 	});
 
+	socket.on('disconnect', function() {
+		RemoveRoomsBySID(socket.id);
+		var count = io.sockets.clients.length
+		console.log("count", count);
+		if (count === 1) {
+			all_rooms = [];
+		}
+	});
+
 });
 
 
 server.listen(runningPortNumber);
 
+function RemoveRoomsBySID (sid) {
+
+	for (var i = 0; i < all_rooms.length; i++) {
+		if (all_rooms[i].hasSocketID(sid)) {
+			all_rooms.slice(i,1);
+			i -= 1;
+		}
+	}
+	return true;
+
+}
 
 
 function GetGameByRoomName (room_name_lookup) {
@@ -147,7 +171,7 @@ function GetGameByRoomName (room_name_lookup) {
 function SaveGameByRoomName (room) {
 	for (var i = 0; i < all_rooms.length; i++) {
 		if (all_rooms[i].room_name === room.room_name) {
-			all_rooms.slice(1,1);
+			all_rooms.slice(i,1);
 			all_rooms.push(room)
 			return true
 		}
@@ -170,14 +194,13 @@ var BattleshipGame = function (room_name_host, player1_join) {
 		return false;
 	}
 	this.whichPlayersName = function (name) {
-		if (player1.name == name) {
+		if (player1.name === name) {
 			return 1;
 		} else {
 			return 2;
 		}
 	}
 	this.playGame = function () {
-		console.log("this.room_name", this.room_name);
 		io.sockets.to(this.room_name).emit('blast', {msg: "The game has begun!"});
 		PlayTurn();
 	}
@@ -187,6 +210,13 @@ var BattleshipGame = function (room_name_host, player1_join) {
 	this.addPlayerOne = function (player1_join) {
 		 player1 = player1_join;
 	}
+	this.hasSocketID = function(sid) {
+		if (player1.sid === sid || player2.sid === sid) {
+			return true;
+		} else {
+			return false;
+		}
+	}
 
 
 	function PlayTurn () {
@@ -195,9 +225,11 @@ var BattleshipGame = function (room_name_host, player1_join) {
 			io.sockets.socket(player1.id).once('shot_guess', function (shot_id) {
 				var isHit = CheckHit(shot_id, 1);
 				if (isHit) {
-					io.sockets.socket(player1.id).emit('shot_hit', shot_id)
+					io.sockets.socket(player1.id).emit('shot_hit', shot_id);
+					io.sockets.socket(player2.id).emit('opposing_shot_hit', shot_id);
 				} else {
-					io.sockets.socket(player1.id).emit('shot_miss', shot_id)
+					io.sockets.socket(player1.id).emit('shot_miss', shot_id);
+					io.sockets.socket(player2.id).emit('opposing_shot_miss', shot_id);
 				}
 				turn = 2;
 				PlayTurn();
@@ -210,9 +242,12 @@ var BattleshipGame = function (room_name_host, player1_join) {
 			io.sockets.socket(player2.id).once('shot_guess', function (shot_id) {
 				var isHit = CheckHit(shot_id, 2);
 				if (isHit) {
-					io.sockets.socket(player2.id).emit('shot_hit', shot_id)
+					io.sockets.socket(player2.id).emit('shot_hit', shot_id);
+					io.sockets.socket(player1_join.id).emit('opposing_shot_hit', shot_id);
 				} else {
-					io.sockets.socket(player2.id).emit('shot_miss', shot_id)
+					io.sockets.socket(player2.id).emit('shot_miss', shot_id);
+					io.sockets.socket(player1_join.id).emit('opposing_shot_miss', shot_id);
+
 				}
 				turn = 1;
 				PlayTurn();
@@ -221,8 +256,6 @@ var BattleshipGame = function (room_name_host, player1_join) {
 
 		}
 		
-
-
 
 	}
 

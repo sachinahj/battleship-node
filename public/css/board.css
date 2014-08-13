@@ -19,6 +19,15 @@ td.chosen-spot {
   background-color: gray;
 }
 
+td.hit-spot {
+  background-color: red;
+  border-radius: 60px;
+}
+
+td.miss-spot {
+  background-color: none;
+}
+
 /* player-shots */
 td.shot-spot {
   width: 35px;

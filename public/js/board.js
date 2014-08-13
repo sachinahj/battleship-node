@@ -5,7 +5,7 @@
 $(function() {
 
   // var name = prompt("What is your name?", "name...");
-  var name = 'sachin' + Date.now().toString();
+  var name = Date.now().toString();
   var current_room_name;
 
     var BattlePiece = function (name, size, start_point, end_point ) {
@@ -163,37 +163,47 @@ $(function() {
   });
 
   $('#ready').on('click', function () {
+    $('#status').html('<h3>Waiting</h3>');
     socket.emit('ready', {name: name, room_name: current_room_name, pieces: pieces, status: 'ready', id: null})
     $(this).hide();
   });
 
   socket.on('set_pieces', function () {
+    $('#status').html('<h3>Place Pieces</h3>').show();
+    var correctlySet = false;
     SelectPieces();
+    
   });
 
-
-
-
-  socket.on('game_started', function () {
-    console.log("game has started");
-  });
 
   socket.on('guess_needed', function () {
+    $('#status').html('<h3>Your Turn</h3>');
     $(document).on('click', '.empty-shot', function () {
-      var shot_id = $(this).attr('id')
+      var shot_id = $(this).attr('id');
       socket.emit('shot_guess', shot_id);
+      $('#status').html('<h3>Waiting</h3>');
     });
   });
 
   socket.on('shot_hit', function(shot_id) {
     $('.shot-spot#'+shot_id).removeClass('empty-shot');
     $('.shot-spot#'+shot_id).addClass('hit-shot');
-  })
+  });
+  
+  socket.on('opposing_shot_hit', function (shot_id) {
+    $('.danger-spot#'+shot_id).removeClass('chosen-spot');
+    $('.danger-spot#'+shot_id).addClass('hit-spot');
+  });
+  socket.on('opposing_shot_miss', function (shot_id) {
+    $('.danger-spot#'+shot_id).removeClass('empty-spot');
+    $('.danger-spot#'+shot_id).addClass('miss-spot');
+  });
+
 
   socket.on('shot_miss', function(shot_id) {
     $('.shot-spot#'+shot_id).removeClass('empty-shot');
     $('.shot-spot#'+shot_id).addClass('miss-shot');
-  })
+  });
 
 
 
@@ -203,7 +213,21 @@ $(function() {
 
 // -----------------------------------------------
 
-
+  function NumberOfHitPoints () {
+    var all_hit_points = [];
+    for (var i = 0; i < pieces.length; i++) {
+      for (var j = 0; j < pieces[i].points.length; j++) {
+        all_hit_points.push(pieces[i].points[j]);
+      }
+    }
+    // var hit_points = _.uniq(all_hit_points);
+    console.log("hit_points.count", all_hit_points.count);
+    if (all_hit_points.count == 17) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
 
   function SelectPieces () {
@@ -257,9 +281,17 @@ $(function() {
 
         } else {
 
-          allPiecesSet = true;
-          $('#ready').show();
-          return true;
+          correctlySet = NumberOfHitPoints();
+          console.log("correctlySet", correctlySet);
+          if (!correctlySet) {
+            $('.danger-spot').addClass('empty-spot');
+            $('.danger-spot').removeClass('chosen-spot');
+            SelectPieces();
+          } else {
+            allPiecesSet = true;
+            $('#ready').show();
+            return true;
+          }
 
         }
 
