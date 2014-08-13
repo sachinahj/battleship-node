@@ -264,6 +264,7 @@ var BattleshipGame = function (room_name_host, player1_join) {
 	}
 	this.playGame = function () {
 		io.sockets.to(this.room_name).emit('blast', {msg: "The game has begun!"});
+		io.sockets.to(this.room_name).emit('game_start');
 		PlayTurn();
 	}
 	this.addPlayerTwo = function (player2_join) {

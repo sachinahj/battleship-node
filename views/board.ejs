@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>board</title>
+        <title>Node.js BattleShip</title>
         <meta name="description" content="battleship game with node">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -93,6 +93,25 @@
         <button id="ready" class="btn btn-primary pull-left" type="button" style="display:none">Ready</button>
         <button id="join" class="btn btn-primary pull-left" type="button" style="display:none">Join</button>
         <button id="host" class="btn btn-warning pull-right" type="button" style="display:none">Host</button>
+      </div>
+    </div>
+
+    <div class="row-fluid ships_status" style="display:none">
+      <div class="span6 pull-left text-left">
+        <h5 class="ship_alive" id="own_carrier">Your Ships</h5>
+        <span class="ship_alive" id="own_carrier">Carrier(5)</span><br>
+        <span class="ship_alive" id="own_battleship">Battleship(4)</span><br>
+        <span class="ship_alive" id="own_destroyer">Destroyer(3)</span><br>
+        <span class="ship_alive" id="own_submarine">Submarine(3)</span><br>
+        <span class="ship_alive" id="own_patrol_boat">Patrol Boat(2)</span><br>
+      </div>
+      <div class="span6 pull-right text-right">
+        <h5 class="ship_alive" id="own_carrier">Opponents Ships</h5>
+        <span class="ship_alive" id="opponent_carrier">Carrier(5)</span><br>
+        <span class="ship_alive" id="opponent_battleship">Battleship(4)</span><br>
+        <span class="ship_alive" id="opponent_destroyer">Destroyer(3)</span><br>
+        <span class="ship_alive" id="opponent_submarine">Submarine(3)</span><br>
+        <span class="ship_alive" id="opponent_patrol_boat">Patrol Boat(2)</span><br>
       </div>
     </div>
 

@@ -53,6 +53,12 @@ td.miss-shot {
 }
 
 
+/* ship visual */
+span.ship_alive {
+  background-color: green;
+}
+
+
 
 /* chatter */
 input:focus,

@@ -200,6 +200,10 @@ $(function() {
     $(this).hide();
   });
 
+  socket.on('game_start', function () {
+    $('div.ships_status').show();
+  });
+
   socket.on('guess_needed', function () {
     $('#status').html('<h4>Your Turn</h4>');
     $(document).on('click', '.empty-shot', function () {
