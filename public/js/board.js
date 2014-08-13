@@ -8,7 +8,9 @@ $(function() {
   var person_name = Date.now().toString();
   var current_room_name;
 
-    var BattlePiece = function (name, size, start_point, end_point ) {
+  // Battle Piece constructor function
+  var BattlePiece = function (name, size, start_point, end_point ) {
+
     this.name = name;
     this.size = size;
     this.start_point = start_point;
@@ -95,8 +97,6 @@ $(function() {
     piece_destroyer,
     piece_patrol_boat
   ]
-
-  var allPiecesSet = false;
 
   var letter_conversion = {
     "A": 1,
@@ -189,11 +189,9 @@ $(function() {
 
   $('#ready').on('click', function () {
     $('#status').html('<h4>Waiting</h4>');
-    socket.emit('ready', {name: personName, room_name: current_room_name, pieces: pieces, status: 'ready', sID: null})
+    socket.emit('ready', {name: person_name, room_name: current_room_name, pieces: pieces, status: 'ready', sID: null})
     $(this).hide();
   });
-
-
 
   socket.on('guess_needed', function () {
     $('#status').html('<h4>Your Turn</h4>');
@@ -227,11 +225,10 @@ $(function() {
 
 
 
-
-
-
 // -----------------------------------------------
 
+  // function to check if user has correctly placed pieces 
+  // by checking if all hit points are unique
   function NumberOfHitPoints () {
     var all_hit_points = [];
     for (var i = 0; i < pieces.length; i++) {
@@ -254,6 +251,8 @@ $(function() {
   }
 
 
+  // function to have user set all pieces 
+  // check at end to see if peices are set correctly
   function SelectPieces () {
     
     var piece_number = 0;
@@ -308,7 +307,6 @@ $(function() {
             $('.danger-spot').removeClass('chosen-spot');
             SelectPieces();
           } else {
-            allPiecesSet = true;
             $('#ready').show();
             return true;
           }

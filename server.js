@@ -46,6 +46,8 @@ app.get("/", function(req, res){
 	res.render('board', {});
 });
 
+
+// ---------------------------------------------------------------
 // var game_room
 var all_rooms = [];
 
@@ -167,12 +169,7 @@ io.sockets.on('connection', function (socket) {
 	});
 
 	socket.on('disconnect', function() {
-		// RemoveRoomsBySID(socket.id);
-		var count = io.sockets.clients.length
-
-		if (count === 1) {
-			all_rooms = [];
-		}
+		RemoveRoomsBySID(socket.id);
 	});
 
 });
@@ -180,6 +177,9 @@ io.sockets.on('connection', function (socket) {
 
 server.listen(runningPortNumber);
 
+
+
+// -------------------------------------------------------------------
 
 // Saves room to all_rooms array --- 
 // If room_name already exists, it slices it out and 
@@ -200,6 +200,7 @@ function SaveRoom (room) {
 
 }
 
+// Get room object by room name
 function GetRoomByRoomName (room_name_lookup) {
 
 	for (var i = 0; i < all_rooms.length; i++) {
@@ -211,23 +212,24 @@ function GetRoomByRoomName (room_name_lookup) {
 
 }
 
+// Removes room from all_rroms array by socket ids
 function RemoveRoomsBySID (sid) {
+	console.log("all_rooms length before: ", all_rooms.length);
 
 	for (var i = 0; i < all_rooms.length; i++) {
 		if (all_rooms[i].hasSocketID(sid)) {
-			all_rooms.slice(i,1);
+			all_rooms.splice(i,1);
 			i -= 1;
 		}
 	}
+	console.log("all_rooms length after: ", all_rooms.length);
 	return true;
 
 }
 
 
 
-
-
-
+// ------------------------------------------------------------
 // code for game instance
 var BattleshipGame = function (room_name_host, player1_join) {
 	this.room_name = room_name_host;
@@ -265,13 +267,20 @@ var BattleshipGame = function (room_name_host, player1_join) {
 		 player1 = player1_join;
 	}
 	this.hasSocketID = function(sid) {
-		if (player1.sid === sid || player2.sid === sid) {
-			return true;
-		} else {
-			return false;
-		}
+		if (player1) {
+			if (player1.sID === sid) {
+				return true;
+			}
+		} 
+		
+		if (player2) {
+			if (player2.sID === sid) {
+				return true;
+			}
+		} 
+		
+		return false;
 	}
-
 
 	function PlayTurn () {
 		if (turn === 1) {
@@ -312,7 +321,6 @@ var BattleshipGame = function (room_name_host, player1_join) {
 		
 
 	}
-
 
 	CheckHit = function (shot_id, player) {
 		
