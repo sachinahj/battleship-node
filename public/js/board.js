@@ -123,23 +123,38 @@ $(function() {
   };
 
 // ---------------------------------------------------------
-
+  // on HOST button click
   $('#host').on('click', function() {
       var room_name_to_host;
-      input = prompt('enter room name to host of 4 characters');
+      input = prompt('Enter the room name of the room name you want to host. (Must be 4 characters)');
+
       if (input != null) {
+
         if (input.length === 4) {
+
           room_name_to_host = input;
           socket.emit("host", {name: name, room_name: room_name_to_host});
-          current_room_name = room_name_to_host;
-          $('#join').off('click').hide();
-          $('#host').off('click').hide();
+          
+          socket.once("host_success", function () {
+            current_room_name = room_name_to_host;
+            $('#join').off('click').hide();
+            $('#host').off('click').hide();
+            $('#status').html('<h4>Waiting on opponent to connect</h4>').show();
+          });
+
+          socket.once("host_error", function () {
+            alert("Room name already exist, choose another!")
+          });
+
         } else {
+
           alert('room must be 4 characters');
-          }
+        }
+
       }
   });
 
+  // on JOIN button click
   $('#join').on('click', function() {
     
     var room_name_to_join;
@@ -151,37 +166,41 @@ $(function() {
     
     socket.emit("join", {name: name, room_name: room_name_to_join});
     
-    socket.once('no_room', function () {
-      alert('no room exist, try again');
+    socket.once('join_error', function () {
+      alert('No room exist with this name!');
+    });
+
+    socket.once('join_full', function () {
+      alert('Room is full!');
     });
     
-    socket.once('room_joined', function (room_name_joined) {
+    socket.once('join_success', function (room_name_joined) {
       current_room_name = room_name_joined
       $('#join').off('click').hide();
       $('#host').off('click').hide();
     });
-  });
 
-  $('#ready').on('click', function () {
-    $('#status').html('<h3>Waiting</h3>');
-    socket.emit('ready', {name: name, room_name: current_room_name, pieces: pieces, status: 'ready', id: null})
-    $(this).hide();
   });
 
   socket.on('set_pieces', function () {
-    $('#status').html('<h3>Place Pieces</h3>').show();
-    var correctlySet = false;
-    SelectPieces();
-    
+    $('#status').html('<h4>Place Pieces</h4>').show();
+    SelectPieces();    
+  });
+
+  $('#ready').on('click', function () {
+    $('#status').html('<h4>Waiting</h4>');
+    socket.emit('ready', {name: name, room_name: current_room_name, pieces: pieces, status: 'ready', sID: null})
+    $(this).hide();
   });
 
 
+
   socket.on('guess_needed', function () {
-    $('#status').html('<h3>Your Turn</h3>');
+    $('#status').html('<h4>Your Turn</h4>');
     $(document).on('click', '.empty-shot', function () {
       var shot_id = $(this).attr('id');
       socket.emit('shot_guess', shot_id);
-      $('#status').html('<h3>Waiting</h3>');
+      $('#status').html('<h4>Waiting</h4>');
     });
   });
 
@@ -220,9 +239,14 @@ $(function() {
         all_hit_points.push(pieces[i].points[j]);
       }
     }
-    // var hit_points = _.uniq(all_hit_points);
-    console.log("hit_points.count", all_hit_points.count);
-    if (all_hit_points.count == 17) {
+
+    function onlyUnique(value, index, self) { 
+      return self.indexOf(value) === index;
+    }
+
+    var hit_points = all_hit_points.filter(onlyUnique);
+    console.log("all_hit_points.length", hit_points.length);
+    if (hit_points.length == 17) {
       return true;
     } else {
       return false;
@@ -250,13 +274,9 @@ $(function() {
           var id = $(this).attr('id');
           setEndPoint(id);
         });
-
         return true;
-
       } else {
-
         return false;
-
       }
 
     }
@@ -281,7 +301,7 @@ $(function() {
 
         } else {
 
-          correctlySet = NumberOfHitPoints();
+          var correctlySet = NumberOfHitPoints();
           console.log("correctlySet", correctlySet);
           if (!correctlySet) {
             $('.danger-spot').addClass('empty-spot');

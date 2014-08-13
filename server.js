@@ -6,12 +6,14 @@
 
 // express magic
 var express = require('express');
+
+// create express app, server and io socket
 var app = express();
 var server = require('http').createServer(app)
 var io = require('socket.io').listen(server);
 var device  = require('express-device');
 
-var runningPortNumber = process.env.PORT;
+var runningPortNumber = process.env.PORT; // run on heroku port
 
 
 app.configure(function(){
@@ -39,6 +41,7 @@ app.use(function(req, res, next){
 // 	res.render('index', {});
 // });
 
+// one route, root path which calls board.ejs view
 app.get("/", function(req, res){
 	res.render('board', {});
 });
@@ -48,73 +51,106 @@ var all_rooms = [];
 
 io.sockets.on('connection', function (socket) {
 
-
+	// HOST event
 	// when socket emits host, a new room is created from input host room name and a message is sent to the host
 	socket.on('host', function (data) {
-		socket.join(data.room_name);
-		var player = {
-			name: data.name,
-			id: socket.id,
-			status: 'not ready'
-		};
-		var game_room = new BattleshipGame(data.room_name, player);
-		all_rooms.push(game_room);
-		var msg = player.name + ' hosted room "' + data.room_name + '". Invite your friend now!';
-		io.sockets.to(data.room_name).emit('blast', {msg: msg})
+		// data is --> {name, room_name}
+		var room_check = GetRoomByRoomName(data.room_name);
+
+		if (room_check) {
+
+			socket.emit('host_error');
+
+		} else {
+
+			socket.emit('host_success');
+
+			var player = {
+				name: data.name,
+				sID: socket.id,
+				status: 'not ready'
+			};
+
+			var game_room = new BattleshipGame(data.room_name, player);
+
+			socket.join(game_room.room_name);
+			var msg = player.name + ' hosted room "' + game_room.room_name + '". Invite your friend now!';
+			io.sockets.to(game_room.room_name).emit('blast', {msg: msg})
+
+			SaveRoom(game_room);
+
+		}
+
 	});
 
-
+	// JOIN event
 	// when socket emits join, we check for room and if it exist, player 2 joins room
 	socket.on('join', function (data) {
-		var player = {
-			name: data.name,
-			id: socket.id,
-			status: 'not ready'
-		};
+		// data is --> {name, room_name}
 
-		var room = GetGameByRoomName(data.room_name);
+		var game_room = GetRoomByRoomName(data.room_name);
 
-		if (room) {
+		// if room exist continue else emit join_error for no room existing
+		if (game_room) {
 
-			socket.emit('room_joined', data.room_name);
-			socket.join(data.room_name);
-			room.addPlayerTwo(player);
-			SaveGameByRoomName(room);
-			
-			var msg = player.name + ' joined room "' + data.room_name + '".';
-			io.sockets.to(data.room_name).emit('blast', {msg: msg})
+			// if room doesnt have player2, add player to room else emit join_full for full room
+			if (!game_room.hasPlayer2()) {
 
-			var count = io.sockets.clients(data.room_name).length;
+				socket.emit('join_success', game_room.room_name);
 
-			if (count === 2) {
-				io.sockets.to(data.room_name).emit('set_pieces')
-				var msg = 'Select your pieces and then press ready!';
-				io.sockets.to(data.room_name).emit('blast', {msg: 'Select your pieces and then press ready!'})
+				var player = {
+					name: data.name,
+					sID: socket.id,
+					status: 'not ready'
+				};
+				
+				socket.join(game_room.room_name);
+				game_room.addPlayerTwo(player);
+				
+				var msg = player.name + ' joined room "' + game_room.room_name + '".';
+				io.sockets.to(game_room.room_name).emit('blast', {msg: msg})
+				
+				msg = 'Select your pieces and then press ready!';
+				io.sockets.to(game_room.room_name).emit('set_pieces')
+				io.sockets.to(data.room_name).emit('blast', {msg: msg})
+
+				SaveRoom(game_room);
+
+			} else {
+
+				socket.emit('join_full');
+
 			}
 
 		} else {
 
-			socket.emit('no_room');
+			socket.emit('join_error');
 
 		}
 	});
 
 	socket.on('ready', function (data) {
-		data["id"] = socket.id;
-		var room = GetGameByRoomName(data.room_name);
-		var player_number = room.whichPlayersName(data.name);
-		console.log("room", room);
-		console.log("player number", player_number);
+		// data is --> {
+		// 		name,
+		// 		room_name,
+		// 		pieces,
+		// 		status,
+		// 		sID
+		// }
+		data["sID"] = socket.id;
+		var game_room = GetRoomByRoomName(data.room_name);
+		var player_number = game_room.whichPlayersName(data.name);
+
 		if (player_number === 1){
-			room.addPlayerOne(data);
-			socket.emit('blast', {msg: "you are ready!"});
+			game_room.addPlayerOne(data);
+			socket.emit('blast', {msg: "You are ready!"});
 		} else {
-			room.addPlayerTwo(data);
-			socket.emit('blast', {msg: "you are ready!"});
+			game_room.addPlayerTwo(data);
+			socket.emit('blast', {msg: "You are ready!"});
 		}
-		SaveGameByRoomName(room);
-		if (room.isStatusReady()) {
-			room.playGame();
+		SaveRoom(game_room);
+		if (game_room.isStatusReady()) {
+			game_room.playGame();
 		}
 	});
 
@@ -124,16 +160,16 @@ io.sockets.on('connection', function (socket) {
 	// io.sockets.emit('blast', {msg:"<span style=\"color:red !important\">someone connected</span>"});
 
 	socket.on('blast', function(data, fn){
-		console.log(data);
+		// console.log(data);
 		io.sockets.emit('blast', {msg:data.msg});
 
 		fn();//call the client back to clear out the field
 	});
 
 	socket.on('disconnect', function() {
-		RemoveRoomsBySID(socket.id);
+		// RemoveRoomsBySID(socket.id);
 		var count = io.sockets.clients.length
-		console.log("count", count);
+
 		if (count === 1) {
 			all_rooms = [];
 		}
@@ -143,6 +179,37 @@ io.sockets.on('connection', function (socket) {
 
 
 server.listen(runningPortNumber);
+
+
+// Saves room to all_rooms array --- 
+// If room_name already exists, it slices it out and 
+// adds the new instance back to the end of the array
+function SaveRoom (room) {
+	
+	console.log("all_rooms length before: ", all_rooms.length);
+
+	for (var i = 0; i < all_rooms.length; i++) {
+		if (all_rooms[i].room_name === room.room_name) {
+			all_rooms.splice(i,1);
+		}
+	}
+	all_rooms.push(room);
+
+	console.log("all_rooms length after: ", all_rooms.length);
+	return true;
+
+}
+
+function GetRoomByRoomName (room_name_lookup) {
+
+	for (var i = 0; i < all_rooms.length; i++) {
+		if (all_rooms[i].room_name === room_name_lookup) {
+			return all_rooms[i];
+		}
+	}
+	return null;
+
+}
 
 function RemoveRoomsBySID (sid) {
 
@@ -157,37 +224,24 @@ function RemoveRoomsBySID (sid) {
 }
 
 
-function GetGameByRoomName (room_name_lookup) {
 
-	for (var i = 0; i < all_rooms.length; i++) {
-		if (all_rooms[i].room_name === room_name_lookup) {
-			return all_rooms[i];
-		}
-	}
-	return null;
 
-}
 
-function SaveGameByRoomName (room) {
-	for (var i = 0; i < all_rooms.length; i++) {
-		if (all_rooms[i].room_name === room.room_name) {
-			all_rooms.slice(i,1);
-			all_rooms.push(room)
-			return true
-		}
-	}
-	return false
 
-}
-
+// code for game instance
 var BattleshipGame = function (room_name_host, player1_join) {
 	this.room_name = room_name_host;
 	var player1 = player1_join;
-	var player2;
+	var player2 = null;
 	var turn = 1;
+	this.hasPlayer2 = function () {
+		if (player2 !== null) {
+			return true;
+		} else {
+			return false;
+		}
+	}
 	this.isStatusReady = function () {
-		console.log("player1 status", player1.status);
-		console.log("player2 status", player2.status);
 		if (player1.status === "ready" && player2.status === "ready") {
 			return true;
 		}
@@ -221,15 +275,15 @@ var BattleshipGame = function (room_name_host, player1_join) {
 
 	function PlayTurn () {
 		if (turn === 1) {
-			io.sockets.socket(player1.id).emit('guess_needed');
-			io.sockets.socket(player1.id).once('shot_guess', function (shot_id) {
+			io.sockets.socket(player1.sID).emit('guess_needed');
+			io.sockets.socket(player1.sID).once('shot_guess', function (shot_id) {
 				var isHit = CheckHit(shot_id, 1);
 				if (isHit) {
-					io.sockets.socket(player1.id).emit('shot_hit', shot_id);
-					io.sockets.socket(player2.id).emit('opposing_shot_hit', shot_id);
+					io.sockets.socket(player1.sID).emit('shot_hit', shot_id);
+					io.sockets.socket(player2.sID).emit('opposing_shot_hit', shot_id);
 				} else {
-					io.sockets.socket(player1.id).emit('shot_miss', shot_id);
-					io.sockets.socket(player2.id).emit('opposing_shot_miss', shot_id);
+					io.sockets.socket(player1.sID).emit('shot_miss', shot_id);
+					io.sockets.socket(player2.sID).emit('opposing_shot_miss', shot_id);
 				}
 				turn = 2;
 				PlayTurn();
@@ -238,15 +292,15 @@ var BattleshipGame = function (room_name_host, player1_join) {
 
 		} else {
 
-			io.sockets.socket(player2.id).emit('guess_needed');
-			io.sockets.socket(player2.id).once('shot_guess', function (shot_id) {
+			io.sockets.socket(player2.sID).emit('guess_needed');
+			io.sockets.socket(player2.sID).once('shot_guess', function (shot_id) {
 				var isHit = CheckHit(shot_id, 2);
 				if (isHit) {
-					io.sockets.socket(player2.id).emit('shot_hit', shot_id);
-					io.sockets.socket(player1_join.id).emit('opposing_shot_hit', shot_id);
+					io.sockets.socket(player2.sID).emit('shot_hit', shot_id);
+					io.sockets.socket(player1_join.sID).emit('opposing_shot_hit', shot_id);
 				} else {
-					io.sockets.socket(player2.id).emit('shot_miss', shot_id);
-					io.sockets.socket(player1_join.id).emit('opposing_shot_miss', shot_id);
+					io.sockets.socket(player2.sID).emit('shot_miss', shot_id);
+					io.sockets.socket(player1_join.sID).emit('opposing_shot_miss', shot_id);
 
 				}
 				turn = 1;
