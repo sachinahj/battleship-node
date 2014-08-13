@@ -52,7 +52,9 @@ app.get("/", function(req, res){
 var all_rooms = [];
 
 io.sockets.on('connection', function (socket) {
-	socket.emit('blast', {msg:"<span style=\"color:red !important\">welcome!</span>"});
+	
+	socket.emit('welcome');
+	socket.emit('blast', {msg:"<span style=\"color:red !important\">Welcome! HOST or JOIN a game.</span>"});
 
 
 

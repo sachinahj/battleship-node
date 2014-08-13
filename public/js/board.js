@@ -123,6 +123,13 @@ $(function() {
   };
 
 // ---------------------------------------------------------
+  // on WELCOME
+  socket.on('welcome', function () {
+    $('#join').off('click').show();
+    $('#host').off('click').show();
+  });
+
+
   // on HOST button click
   $('#host').on('click', function() {
       var room_name_to_host;
