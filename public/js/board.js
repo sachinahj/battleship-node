@@ -233,15 +233,31 @@ $(function() {
   });
 
   socket.on('own_ship_sunk', function (shipName) {
-    console.log("own ship sunk: ", shipName);
     $('span#own_'+shipName.toLowerCase()).removeClass('ship_alive');
     $('span#own_'+shipName.toLowerCase()).addClass('ship_dead');
   });
 
   socket.on('opposing_ship_sunk', function (shipName) {
-    console.log("opposing ship sunk: ", shipName);
     $('span#opponent_'+shipName.toLowerCase()).removeClass('ship_alive');
     $('span#opponent_'+shipName.toLowerCase()).addClass('ship_dead');
+  });
+
+  socket.on('game_won', function () {
+    $('#status').html('<h4 style="background-color:green;color:white;">!!YOU WON!!</h4>');
+    $(document).off('click', '.empty-shot');
+    $('button#restart').show();
+    $(document).on('click', 'button#restart', function () {
+      location.reload();
+    });
+  });
+
+  socket.on('game_loss', function () {
+    $('#status').html('<h4 style="background-color:red;color:white;">!!YOU LOST!!</h4>');
+    $(document).off('click', '.empty-shot');
+    $('button#restart').show();
+    $(document).on('click', 'button#restart', function () {
+      location.reload();
+    });
   });
 
 
@@ -294,7 +310,6 @@ $(function() {
     }
 
     var hit_points = all_hit_points.filter(onlyUnique);
-    console.log("all_hit_points.length", hit_points.length);
     if (hit_points.length === 17) {
       return true;
     } else {
@@ -353,7 +368,6 @@ $(function() {
         } else {
 
           var correctlySet = NumberOfHitPoints();
-          console.log("correctlySet", correctlySet);
           if (!correctlySet) {
             $('#status').html('<h4>Place \'em correctly please</h4><h5>Boat Sizes in Order (spots) = 5, 4, 3, 3, 2</h5>');
             $('.danger-spot').addClass('empty-spot');

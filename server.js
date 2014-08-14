@@ -165,7 +165,7 @@ io.sockets.on('connection', function (socket) {
 
 
 	socket.on('blast', function(data, fn){
-		console.log(data);
+		// console.log(data);
 		if (data.room_name === null ) {
 			// io.sockets.emit('blast', {msg:data.msg});
 			socket.emit('blast', {msg:"<span style=\"color:red !important\">HOST or JOIN a game to chat</span>"});
@@ -297,13 +297,20 @@ var BattleshipGame = function (room_name_host, player1_join) {
 			io.sockets.socket(player1.sID).once('shot_guess', function (shot_id) {
 				var isHit = CheckHit(shot_id, 1);
 				if (isHit) {
+					io.sockets.socket(player1.sID).emit('shot_hit', shot_id);
+					io.sockets.socket(player2.sID).emit('opposing_shot_hit', shot_id);
+
 					var shipSunk = CheckShip(1);
 					if (shipSunk) {
 						io.sockets.socket(player1.sID).emit('opposing_ship_sunk', shipSunk);
 						io.sockets.socket(player2.sID).emit('own_ship_sunk', shipSunk);
 					}
-					io.sockets.socket(player1.sID).emit('shot_hit', shot_id);
-					io.sockets.socket(player2.sID).emit('opposing_shot_hit', shot_id);
+					if (hasWon(1)) {
+						console.log("player 1 won");
+						io.sockets.socket(player1.sID).emit('game_won');
+						io.sockets.socket(player2.sID).emit('game_loss');
+						return;
+					}
 				} else {
 					io.sockets.socket(player1.sID).emit('shot_miss', shot_id);
 					io.sockets.socket(player2.sID).emit('opposing_shot_miss', shot_id);
@@ -319,13 +326,20 @@ var BattleshipGame = function (room_name_host, player1_join) {
 			io.sockets.socket(player2.sID).once('shot_guess', function (shot_id) {
 				var isHit = CheckHit(shot_id, 2);
 				if (isHit) {
+					io.sockets.socket(player2.sID).emit('shot_hit', shot_id);
+					io.sockets.socket(player1.sID).emit('opposing_shot_hit', shot_id);
+
 					var shipSunk = CheckShip(2);
 					if (shipSunk) {
 						io.sockets.socket(player2.sID).emit('opposing_ship_sunk', shipSunk);
 						io.sockets.socket(player1.sID).emit('own_ship_sunk', shipSunk);
 					}
-					io.sockets.socket(player2.sID).emit('shot_hit', shot_id);
-					io.sockets.socket(player1.sID).emit('opposing_shot_hit', shot_id);
+					if (hasWon(2)) {
+						console.log("player 2 won");
+						io.sockets.socket(player2.sID).emit('game_won');
+						io.sockets.socket(player1.sID).emit('game_loss');
+						return;
+					}
 				} else {
 					io.sockets.socket(player2.sID).emit('shot_miss', shot_id);
 					io.sockets.socket(player1.sID).emit('opposing_shot_miss', shot_id);
@@ -395,6 +409,7 @@ var BattleshipGame = function (room_name_host, player1_join) {
 				var isSunk = piece_hits.every(allTrue);
 				if (isSunk) {
 					pieces.splice(i,1);
+					console.log("pieces", pieces);
 					return piece_name;
 				}
 				
@@ -411,6 +426,7 @@ var BattleshipGame = function (room_name_host, player1_join) {
 				var isSunk = piece_hits.every(allTrue);
 				if (isSunk) {
 					pieces.splice(i,1);
+					console.log("pieces", pieces);
 					return piece_name;
 				}
 				
@@ -419,6 +435,25 @@ var BattleshipGame = function (room_name_host, player1_join) {
 
 		}
 
+	}
+
+
+	hasWon = function (player) {
+		if (player === 1)		{
+			if(player2.pieces[0] ==  null) {
+				console.log("returning true that player 2 lost");
+				return true;
+			} else {
+				return false;
+			}
+		} else {
+			if(player1.pieces[0] == null) {
+				return true;
+				console.log("returning true that player 1 lost");
+			} else {
+				return false;
+			}
+		}
 
 	}
 
