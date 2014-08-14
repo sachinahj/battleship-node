@@ -1,9 +1,17 @@
-/* player-board */
+  /* player-board */
 td.danger-spot {
   width: 35px;
   padding: 0px;
   cursor: pointer;
-  color: black;
+  color: white;
+
+
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 tr.danger-row {
   height: 35px;
@@ -33,7 +41,14 @@ td.shot-spot {
   width: 35px;
   padding: 0px;
   cursor: pointer;
-  color: black;
+  color: white;
+
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 tr.shot-row {
   height: 35px;
@@ -56,9 +71,11 @@ td.miss-shot {
 /* ship visual */
 span.ship_alive {
   background-color: green;
+  color: white;
 }
 span.ship_dead {
   background-color: red;
+  color: white;
 }
 
 

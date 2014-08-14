@@ -38,23 +38,22 @@ $(function(){
 		$allPostsTextArea.text('');
 	});
 
-	$sendBlastButton.click(function(e){
-
-		var blast = $blastField.val();
-		if(blast.length){
-			socket.emit("blast", {msg:blast}, 
-				function(data){
-					$blastField.val('');
-				});
-		}
-
-
-	});
+	// var $sendBlastButton = $('#send');
+	// $sendBlastButton.click(function(e){
+	// 	console.log("current room name", current_room_name);
+	// 	var blast = $blastField.val();
+	// 	if(blast.length){
+	// 		socket.emit("blast", {msg:blast}, 
+	// 			function(data){
+	// 				$blastField.val('');
+	// 			});
+	// 	}
+	// });
 
 	$blastField.keydown(function (e){
-	    if(e.keyCode == 13){
-	        $sendBlastButton.trigger('click');//lazy, but works
-	    }
+    if(e.keyCode == 13){
+      $sendBlastButton.trigger('click');//lazy, but works
+    }
 	})
 	
 });

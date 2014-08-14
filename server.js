@@ -57,8 +57,6 @@ io.sockets.on('connection', function (socket) {
 	socket.emit('blast', {msg:"<span style=\"color:red !important\">Welcome! HOST or JOIN a game.</span>"});
 
 
-
-
 	// HOST event
 	// when socket emits host, a new room is created from input host room name and a message is sent to the host
 	socket.on('host', function (data) {
@@ -165,11 +163,15 @@ io.sockets.on('connection', function (socket) {
 
 
 
-	// io.sockets.emit('blast', {msg:"<span style=\"color:red !important\">someone connected</span>"});
 
 	socket.on('blast', function(data, fn){
-		// console.log(data);
-		io.sockets.emit('blast', {msg:data.msg});
+		console.log(data);
+		if (data.room_name === null ) {
+			// io.sockets.emit('blast', {msg:data.msg});
+			socket.emit('blast', {msg:"<span style=\"color:red !important\">HOST or JOIN a game to chat</span>"});
+		} else {
+			io.sockets.to(data.room_name).emit('blast', {msg: data.msg})
+		}
 
 		fn();//call the client back to clear out the field
 	});
@@ -392,7 +394,6 @@ var BattleshipGame = function (room_name_host, player1_join) {
 				var piece_hits = pieces[i].hits;
 				var isSunk = piece_hits.every(allTrue);
 				if (isSunk) {
-					console.log("piece_name from player 2", piece_name);
 					pieces.splice(i,1);
 					return piece_name;
 				}
@@ -409,7 +410,6 @@ var BattleshipGame = function (room_name_host, player1_join) {
 				var piece_hits = pieces[i].hits;
 				var isSunk = piece_hits.every(allTrue);
 				if (isSunk) {
-					console.log("piece_name from player 1", piece_name);
 					pieces.splice(i,1);
 					return piece_name;
 				}

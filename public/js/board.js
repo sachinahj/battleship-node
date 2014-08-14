@@ -6,7 +6,7 @@ $(function() {
 
   // var name = prompt("What is your name?", "name...");
   var person_name = Date.now().toString();
-  var current_room_name;
+  var current_room_name = null;
 
   // Battle Piece constructor function
   var BattlePiece = function (name, size, start_point, end_point ) {
@@ -190,7 +190,7 @@ $(function() {
   });
 
   socket.on('set_pieces', function () {
-    $('#status').html('<h4>Place Pieces</h4>').show();
+    $('#status').html('<h4>Place Pieces</h4><h5>Boat Sizes in Order (spots) = 5, 4, 3, 3, 2</h5>').show();
     SelectPieces();    
   });
 
@@ -244,6 +244,19 @@ $(function() {
     $('span#opponent_'+shipName.toLowerCase()).addClass('ship_dead');
   });
 
+
+  var $blastField = $('#blast')
+    , $sendBlastButton = $('#send');
+
+  $sendBlastButton.click(function(e){
+    var blast = $blastField.val();
+    if(blast.length){
+      socket.emit("blast", {msg:blast, room_name: current_room_name}, 
+        function(data){
+          $blastField.val('');
+        });
+    }
+  });
 
 
 
@@ -342,6 +355,7 @@ $(function() {
           var correctlySet = NumberOfHitPoints();
           console.log("correctlySet", correctlySet);
           if (!correctlySet) {
+            $('#status').html('<h4>Place \'em correctly please</h4><h5>Boat Sizes in Order (spots) = 5, 4, 3, 3, 2</h5>');
             $('.danger-spot').addClass('empty-spot');
             $('.danger-spot').removeClass('chosen-spot');
             SelectPieces();
