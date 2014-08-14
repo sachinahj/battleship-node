@@ -295,6 +295,11 @@ var BattleshipGame = function (room_name_host, player1_join) {
 			io.sockets.socket(player1.sID).once('shot_guess', function (shot_id) {
 				var isHit = CheckHit(shot_id, 1);
 				if (isHit) {
+					var shipSunk = CheckShip(1);
+					if (shipSunk) {
+						io.sockets.socket(player1.sID).emit('opposing_ship_sunk', shipSunk);
+						io.sockets.socket(player2.sID).emit('own_ship_sunk', shipSunk);
+					}
 					io.sockets.socket(player1.sID).emit('shot_hit', shot_id);
 					io.sockets.socket(player2.sID).emit('opposing_shot_hit', shot_id);
 				} else {
@@ -312,11 +317,16 @@ var BattleshipGame = function (room_name_host, player1_join) {
 			io.sockets.socket(player2.sID).once('shot_guess', function (shot_id) {
 				var isHit = CheckHit(shot_id, 2);
 				if (isHit) {
+					var shipSunk = CheckShip(2);
+					if (shipSunk) {
+						io.sockets.socket(player2.sID).emit('opposing_ship_sunk', shipSunk);
+						io.sockets.socket(player1.sID).emit('own_ship_sunk', shipSunk);
+					}
 					io.sockets.socket(player2.sID).emit('shot_hit', shot_id);
-					io.sockets.socket(player1_join.sID).emit('opposing_shot_hit', shot_id);
+					io.sockets.socket(player1.sID).emit('opposing_shot_hit', shot_id);
 				} else {
 					io.sockets.socket(player2.sID).emit('shot_miss', shot_id);
-					io.sockets.socket(player1_join.sID).emit('opposing_shot_miss', shot_id);
+					io.sockets.socket(player1.sID).emit('opposing_shot_miss', shot_id);
 
 				}
 				turn = 1;
@@ -362,6 +372,54 @@ var BattleshipGame = function (room_name_host, player1_join) {
 			return false;
 
 		}
+	}
+
+	CheckShip = function (player) {
+		function allTrue(element, index, array) {
+			if (element === true) {
+		  	return true ;
+		  } else {
+		  	return false;
+		  }
+		}	
+
+		if (player === 1) {
+
+			var pieces = player2.pieces;
+			for (var i = 0; i < pieces.length; i++) {
+
+				var piece_name = pieces[i].name;
+				var piece_hits = pieces[i].hits;
+				var isSunk = piece_hits.every(allTrue);
+				if (isSunk) {
+					console.log("piece_name from player 2", piece_name);
+					pieces.splice(i,1);
+					return piece_name;
+				}
+				
+			}
+			return null;
+
+		} else {
+
+			var pieces = player1.pieces;
+			for (var i = 0; i < pieces.length; i++) {
+
+				var piece_name = pieces[i].name;
+				var piece_hits = pieces[i].hits;
+				var isSunk = piece_hits.every(allTrue);
+				if (isSunk) {
+					console.log("piece_name from player 1", piece_name);
+					pieces.splice(i,1);
+					return piece_name;
+				}
+				
+			}
+			return null;
+
+		}
+
+
 	}
 
 }

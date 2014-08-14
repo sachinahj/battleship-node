@@ -57,6 +57,9 @@ td.miss-shot {
 span.ship_alive {
   background-color: green;
 }
+span.ship_dead {
+  background-color: red;
+}
 
 
 

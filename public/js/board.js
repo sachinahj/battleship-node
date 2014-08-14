@@ -88,7 +88,7 @@ $(function() {
   var piece_battleship = new BattlePiece("Battleship", 4, null, null);
   var piece_submarine = new BattlePiece("Submarine", 3, null, null);
   var piece_destroyer = new BattlePiece("Destroyer", 3, null, null);
-  var piece_patrol_boat = new BattlePiece("Patrol Boat", 2, null, null);
+  var piece_patrol_boat = new BattlePiece("PatrolBoat", 2, null, null);
 
   var pieces = [
     piece_carrier,
@@ -227,10 +227,21 @@ $(function() {
     $('.danger-spot#'+shot_id).addClass('miss-spot');
   });
 
-
   socket.on('shot_miss', function(shot_id) {
     $('.shot-spot#'+shot_id).removeClass('empty-shot');
     $('.shot-spot#'+shot_id).addClass('miss-shot');
+  });
+
+  socket.on('own_ship_sunk', function (shipName) {
+    console.log("own ship sunk: ", shipName);
+    $('span#own_'+shipName.toLowerCase()).removeClass('ship_alive');
+    $('span#own_'+shipName.toLowerCase()).addClass('ship_dead');
+  });
+
+  socket.on('opposing_ship_sunk', function (shipName) {
+    console.log("opposing ship sunk: ", shipName);
+    $('span#opponent_'+shipName.toLowerCase()).removeClass('ship_alive');
+    $('span#opponent_'+shipName.toLowerCase()).addClass('ship_dead');
   });
 
 
@@ -244,7 +255,24 @@ $(function() {
     var all_hit_points = [];
     for (var i = 0; i < pieces.length; i++) {
       for (var j = 0; j < pieces[i].points.length; j++) {
-        all_hit_points.push(pieces[i].points[j]);
+        
+        if (pieces[i].points[j]) {
+          var point_column = pieces[i].points[j][0]
+          var point_number = parseInt(pieces[i].points[j].slice(1,3))
+          var point_column_correct = false;
+
+          if (point_number < 11 && point_number > 0) {
+            var letters_array = ["A","B","C","D","E","F","G","H","I","J"];
+
+            for (var k = 0; k < letters_array.length; k++) {
+              if (point_column.indexOf(letters_array[k]) !== -1) {
+                all_hit_points.push(pieces[i].points[j]);
+                
+              }
+            }   
+          }
+        }
+
       }
     }
 
@@ -254,7 +282,7 @@ $(function() {
 
     var hit_points = all_hit_points.filter(onlyUnique);
     console.log("all_hit_points.length", hit_points.length);
-    if (hit_points.length == 17) {
+    if (hit_points.length === 17) {
       return true;
     } else {
       return false;
