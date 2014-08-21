@@ -149,10 +149,12 @@ io.sockets.on('connection', function (socket) {
 
 		if (player_number === 1){
 			game_room.addPlayerOne(data);
-			socket.emit('blast', {msg: "You are ready!"});
+			socket.emit('blast', {msg:"<span style=\"color:red !important\">You are ready!</span>"});
+
 		} else {
 			game_room.addPlayerTwo(data);
-			socket.emit('blast', {msg: "You are ready!"});
+			socket.emit('blast', {msg:"<span style=\"color:red !important\">Welcome! HOST or JOIN a game.</span>"});
+
 		}
 		SaveRoom(game_room);
 		if (game_room.isStatusReady()) {
