@@ -295,64 +295,47 @@ var BattleshipGame = function (room_name_host, player1_join) {
 
 	function PlayTurn () {
 		if (turn === 1) {
-			io.sockets.socket(player1.sID).emit('guess_needed');
-			io.sockets.socket(player1.sID).once('shot_guess', function (shot_id) {
-				var isHit = CheckHit(shot_id, 1);
-				if (isHit) {
-					io.sockets.socket(player1.sID).emit('shot_hit', shot_id);
-					io.sockets.socket(player2.sID).emit('opposing_shot_hit', shot_id);
-
-					var shipSunk = CheckShip(1);
-					if (shipSunk) {
-						io.sockets.socket(player1.sID).emit('opposing_ship_sunk', shipSunk);
-						io.sockets.socket(player2.sID).emit('own_ship_sunk', shipSunk);
-					}
-					if (hasWon(1)) {
-						console.log("player 1 won");
-						io.sockets.socket(player1.sID).emit('game_won');
-						io.sockets.socket(player2.sID).emit('game_loss');
-						return;
-					}
-				} else {
-					io.sockets.socket(player1.sID).emit('shot_miss', shot_id);
-					io.sockets.socket(player2.sID).emit('opposing_shot_miss', shot_id);
-				}
-				turn = 2;
-				PlayTurn();
-			});
-
-
+			var mover = player1;
+			var non_mover = player2;
 		} else {
-
-			io.sockets.socket(player2.sID).emit('guess_needed');
-			io.sockets.socket(player2.sID).once('shot_guess', function (shot_id) {
-				var isHit = CheckHit(shot_id, 2);
-				if (isHit) {
-					io.sockets.socket(player2.sID).emit('shot_hit', shot_id);
-					io.sockets.socket(player1.sID).emit('opposing_shot_hit', shot_id);
-
-					var shipSunk = CheckShip(2);
-					if (shipSunk) {
-						io.sockets.socket(player2.sID).emit('opposing_ship_sunk', shipSunk);
-						io.sockets.socket(player1.sID).emit('own_ship_sunk', shipSunk);
-					}
-					if (hasWon(2)) {
-						console.log("player 2 won");
-						io.sockets.socket(player2.sID).emit('game_won');
-						io.sockets.socket(player1.sID).emit('game_loss');
-						return;
-					}
-				} else {
-					io.sockets.socket(player2.sID).emit('shot_miss', shot_id);
-					io.sockets.socket(player1.sID).emit('opposing_shot_miss', shot_id);
-
-				}
-				turn = 1;
-				PlayTurn();
-			});
-
-
+			var mover = player2;
+			var non_mover = player1;
 		}
+
+		io.sockets.socket(mover.sID).emit('guess_needed');
+		io.sockets.socket(mover.sID).once('shot_guess', function (shot_id) {
+			var isHit = CheckHit(shot_id, 1);
+			if (isHit) {
+				io.sockets.socket(mover.sID).emit('shot_hit', shot_id);
+				io.sockets.socket(non_mover.sID).emit('opposing_shot_hit', shot_id);
+
+				var shipSunk = CheckShip(1);
+				if (shipSunk) {
+					io.sockets.socket(mover.sID).emit('opposing_ship_sunk', shipSunk);
+					io.sockets.socket(non_mover.sID).emit('own_ship_sunk', shipSunk);
+				}
+				if (hasWon(1)) {
+					console.log("player 1 won");
+					io.sockets.socket(mover.sID).emit('game_won');
+					io.sockets.socket(non_mover.sID).emit('game_loss');
+					return;
+				}
+			} else {
+				io.sockets.socket(mover.sID).emit('shot_miss', shot_id);
+				io.sockets.socket(non_mover.sID).emit('opposing_shot_miss', shot_id);
+			}
+			if (turn === 1) {
+					player1 = mover;
+					player2 = non_mover;
+					turn = 2;
+					PlayTurn();
+				} else {
+					player2 = mover;
+					player1 = non_mover;
+					turn = 1;
+					PlayTurn();
+				}
+		});
 		
 
 	}
@@ -360,36 +343,24 @@ var BattleshipGame = function (room_name_host, player1_join) {
 	CheckHit = function (shot_id, player) {
 		
 		if (player === 1) {
-
-			var pieces = player2.pieces;
-			for (var i = 0; i < pieces.length; i++) {
-
-				var points = pieces[i].points
-				for (var j = 0; j < points.length; j++) {
-					if (points[j] === shot_id) {
-						player2.pieces[i].hits[j] = true;
-						return true;
-					}
-				}
-			}
-			return false;
-
+			var opponent = player2;
 		} else {
+			var opponent = player1;
+		}
 
-			var pieces = player1.pieces;
-			for (var i = 0; i < pieces.length; i++) {
+		var pieces = opponent.pieces;
+		for (var i = 0; i < pieces.length; i++) {
 
-				var points = pieces[i].points
-				for (var j = 0; j < points.length; j++) {
-					if (points[j] === shot_id) {
-						player1.pieces[i].hits[j] = true;
-						return true;
-					}
+			var points = pieces[i].points
+			for (var j = 0; j < points.length; j++) {
+				if (points[j] === shot_id) {
+					opponent.pieces[i].hits[j] = true;
+					return true;
 				}
 			}
-			return false;
-
 		}
+		return false;
+
 	}
 
 	CheckShip = function (player) {
@@ -402,40 +373,24 @@ var BattleshipGame = function (room_name_host, player1_join) {
 		}	
 
 		if (player === 1) {
-
 			var pieces = player2.pieces;
-			for (var i = 0; i < pieces.length; i++) {
-
-				var piece_name = pieces[i].name;
-				var piece_hits = pieces[i].hits;
-				var isSunk = piece_hits.every(allTrue);
-				if (isSunk) {
-					pieces.splice(i,1);
-					console.log("pieces", pieces);
-					return piece_name;
-				}
-				
-			}
-			return null;
-
 		} else {
-
 			var pieces = player1.pieces;
-			for (var i = 0; i < pieces.length; i++) {
-
-				var piece_name = pieces[i].name;
-				var piece_hits = pieces[i].hits;
-				var isSunk = piece_hits.every(allTrue);
-				if (isSunk) {
-					pieces.splice(i,1);
-					console.log("pieces", pieces);
-					return piece_name;
-				}
-				
-			}
-			return null;
-
 		}
+
+		for (var i = 0; i < pieces.length; i++) {
+
+			var piece_name = pieces[i].name;
+			var piece_hits = pieces[i].hits;
+			var isSunk = piece_hits.every(allTrue);
+			if (isSunk) {
+				pieces.splice(i,1);
+				console.log("pieces", pieces);
+				return piece_name;
+			}
+			
+		}
+		return null;
 
 	}
 
